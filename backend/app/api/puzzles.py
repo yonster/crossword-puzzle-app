@@ -152,3 +152,24 @@ def export_puzzle(
         media_type=media_type,
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.delete("/{puzzle_id}")
+def delete_puzzle(
+    puzzle_id: int,
+    db: Session = Depends(get_db),
+    current_user: user_model.User = Depends(get_current_user)
+):
+    puzzle = db.query(puzzle_model.Puzzle).filter(puzzle_model.Puzzle.id == puzzle_id).first()
+    
+    if not puzzle:
+        raise HTTPException(status_code=404, detail="Puzzle not found")
+    
+    # Check if user owns the puzzle
+    if puzzle.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this puzzle")
+    
+    # Delete the puzzle (cascade should handle cells, clues, and progress)
+    db.delete(puzzle)
+    db.commit()
+    
+    return {"message": "Puzzle deleted successfully"}
