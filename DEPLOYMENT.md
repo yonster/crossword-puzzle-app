@@ -6,24 +6,32 @@ This guide will help you deploy the Crossword app to Railway.app for personal us
 
 Your current Railway deployment is failing because it needs a PostgreSQL database and proper environment variables. Here's how to fix it:
 
-### Step 1: Add PostgreSQL Database
+### Step 1: Add PostgreSQL Database (if not already done)
 
 1. Go to your Railway project at [railway.app](https://railway.app)
 2. Click "New" → "Database" → "Add PostgreSQL"
 3. Wait for it to provision (about 30 seconds)
 
-### Step 2: Set Environment Variables
+### Step 2: Verify Database Connection
 
-In your Railway project, go to the service settings and add these variables:
+Check if `DATABASE_URL` already exists in your service variables. It should look like:
+```
+postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}
+```
 
-- `DATABASE_URL`: `${{Postgres.DATABASE_URL}}` (Railway will auto-populate this)
-- `SECRET_KEY`: Generate a random 32-character string
+If it exists with this format, leave it alone - it's correct!
+
+### Step 3: Add Missing Environment Variables
+
+In your Railway project, go to the service settings and add these variables (if they don't exist):
+
+- `SECRET_KEY`: Generate a random 32-character string (example: `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`)
 - `ALGORITHM`: `HS256`
 - `ACCESS_TOKEN_EXPIRE_MINUTES`: `10080`
 
-### Step 3: Redeploy
+### Step 4: Deploy
 
-Once you add the database and environment variables, Railway should automatically redeploy your app and it should work!
+Once you add the missing environment variables, click "Deploy" in Railway or it will automatically redeploy. Your app should work once the deployment completes!
 
 ## Full Setup Guide
 
