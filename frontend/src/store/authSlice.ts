@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
+import config from '../config'
 
 interface User {
   id: number
@@ -28,7 +29,7 @@ export const login = createAsyncThunk(
     formData.append('username', username)
     formData.append('password', password)
     
-    const response = await axios.post('/api/auth/login', formData)
+    const response = await axios.post(`${config.apiUrl}/api/auth/login`, formData)
     return response.data
   }
 )
@@ -36,7 +37,7 @@ export const login = createAsyncThunk(
 export const register = createAsyncThunk(
   'auth/register',
   async ({ username, email, password }: { username: string; email: string; password: string }) => {
-    const response = await axios.post('/api/auth/register', {
+    const response = await axios.post(`${config.apiUrl}/api/auth/register`, {
       username,
       email,
       password,
@@ -51,7 +52,7 @@ export const fetchCurrentUser = createAsyncThunk(
     const state = getState() as { auth: AuthState }
     const token = state.auth.token
     
-    const response = await axios.get('/api/auth/me', {
+    const response = await axios.get(`${config.apiUrl}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data

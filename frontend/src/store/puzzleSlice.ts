@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import axios from 'axios'
 import { RootState } from './store'
+import config from '../config'
 
 export interface Cell {
   row: number
@@ -63,7 +64,7 @@ const initialState: PuzzleState = {
 export const fetchPuzzles = createAsyncThunk(
   'puzzle/fetchPuzzles',
   async () => {
-    const response = await axios.get('/api/puzzles')
+    const response = await axios.get(`${config.apiUrl}/api/puzzles`)
     return response.data
   }
 )
@@ -75,7 +76,7 @@ export const fetchPuzzle = createAsyncThunk(
     const token = state.auth.token
     
     const headers = token ? { Authorization: `Bearer ${token}` } : {}
-    const response = await axios.get(`/api/puzzles/${id}`, { headers })
+    const response = await axios.get(`${config.apiUrl}/api/puzzles/${id}`, { headers })
     return response.data
   }
 )
@@ -89,7 +90,7 @@ export const fetchProgress = createAsyncThunk(
     if (!token) return null
     
     try {
-      const response = await axios.get(`/api/progress/${puzzleId}`, {
+      const response = await axios.get(`${config.apiUrl}/api/progress/${puzzleId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       return response.data
@@ -115,7 +116,7 @@ export const saveProgress = createAsyncThunk(
       : elapsedTime
     
     const response = await axios.post(
-      '/api/progress/',
+      `${config.apiUrl}/api/progress/`,
       {
         puzzle_id: puzzleId,
         current_state: state,
@@ -138,7 +139,7 @@ export const deletePuzzle = createAsyncThunk(
       throw new Error('Authentication required to delete puzzle')
     }
     
-    const response = await axios.delete(`/api/puzzles/${puzzleId}`, {
+    const response = await axios.delete(`${config.apiUrl}/api/puzzles/${puzzleId}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return { puzzleId, message: response.data.message }

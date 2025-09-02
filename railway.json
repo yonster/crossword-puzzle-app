@@ -1,0 +1,42 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "nixpacks"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "services": {
+    "backend": {
+      "build": {
+        "context": "backend"
+      },
+      "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+      "healthcheckPath": "/",
+      "envVars": {
+        "DATABASE_URL": "${{POSTGRES.DATABASE_URL}}",
+        "SECRET_KEY": "${{secret(32)}}",
+        "ALGORITHM": "HS256",
+        "ACCESS_TOKEN_EXPIRE_MINUTES": "10080"
+      }
+    },
+    "frontend": {
+      "build": {
+        "context": "frontend"
+      },
+      "buildCommand": "npm install && npm run build",
+      "startCommand": "npm run preview -- --host 0.0.0.0 --port $PORT",
+      "envVars": {
+        "VITE_API_URL": "${{backend.URL}}"
+      }
+    }
+  },
+  "databases": [
+    {
+      "name": "postgres",
+      "engine": "postgresql"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useSelector } from 'react-redux'
 import { RootState } from '../store/store'
+import config from '../config'
 
 export default function CreatePuzzlePage() {
   const navigate = useNavigate()
@@ -39,7 +40,7 @@ export default function CreatePuzzlePage() {
     formData.append('file', file)
 
     try {
-      const response = await axios.post('/api/puzzles/import', formData, {
+      const response = await axios.post(`${config.apiUrl}/api/puzzles/import`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
