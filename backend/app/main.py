@@ -11,7 +11,12 @@ app = FastAPI(title="Crossword Puzzle API", version="1.0.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React dev servers
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://localhost:5173",  # React dev servers
+        "https://*.up.railway.app",  # Railway frontend domains
+        "https://crossword-puzzle-app-frontend-production.up.railway.app"  # Expected frontend domain
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
