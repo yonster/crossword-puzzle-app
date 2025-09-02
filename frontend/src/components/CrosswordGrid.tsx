@@ -195,11 +195,11 @@ export default function CrosswordGrid() {
             {!cell.is_black_square && (
               <>
                 {cell.number && (
-                  <span className="absolute top-0 left-0.5 text-xs font-bold">
+                  <span className="absolute top-0 left-0.5 text-[8px] font-bold">
                     {cell.number}
                   </span>
                 )}
-                <span className="text-lg font-bold uppercase">
+                <span className="text-[22px] font-bold uppercase">
                   {userEntry}
                 </span>
               </>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState, AppDispatch } from '../store/store'
@@ -21,6 +21,10 @@ export default function PuzzlePage() {
   )
   const { token } = useSelector((state: RootState) => state.auth)
   const [showCompletionModal, setShowCompletionModal] = useState(false)
+  
+  // Use refs to track current values for the cleanup function
+  const currentValuesRef = useRef({ isTimerRunning, token, currentPuzzle, userGrid })
+  currentValuesRef.current = { isTimerRunning, token, currentPuzzle, userGrid }
 
   useEffect(() => {
     if (id) {
@@ -69,6 +73,8 @@ export default function PuzzlePage() {
   // Save progress and pause timer when leaving the puzzle
   useEffect(() => {
     return () => {
+      const { isTimerRunning, token, currentPuzzle, userGrid } = currentValuesRef.current
+      
       // Pause the timer when leaving the page
       if (isTimerRunning) {
         dispatch(stopTimer())
@@ -82,7 +88,7 @@ export default function PuzzlePage() {
         }))
       }
     }
-  }, [token, currentPuzzle, userGrid, dispatch, isTimerRunning])
+  }, [dispatch]) // Only depend on dispatch
 
   // Save progress immediately when puzzle is completed
   useEffect(() => {
