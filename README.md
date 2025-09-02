@@ -123,10 +123,10 @@ Once the backend is running, you can access the interactive API documentation at
 ## File Format Support
 
 ### .puz Files
-Standard binary crossword format used by many puzzle applications.
+Across Lite format - the most common crossword puzzle format used by newspapers, puzzle makers, and applications worldwide. Binary format containing grid, clues, and metadata.
 
 ### NYT JSON Format
-JSON format used for New York Times puzzle submissions, containing metadata, grid, and clues.
+JSON format used for New York Times puzzle submissions, containing metadata, grid, and clues in a structured text format.
 
 ## Development
 

@@ -38,6 +38,7 @@ interface PuzzleState {
   elapsedTime: number
   isTimerRunning: boolean
   lastTimerUpdate: number
+  isCompleted: boolean
   isLoading: boolean
   error: string | null
 }
@@ -54,6 +55,7 @@ const initialState: PuzzleState = {
   elapsedTime: 0,
   isTimerRunning: false,
   lastTimerUpdate: 0,
+  isCompleted: false,
   isLoading: false,
   error: null,
 }
@@ -78,22 +80,68 @@ export const fetchPuzzle = createAsyncThunk(
   }
 )
 
+export const fetchProgress = createAsyncThunk(
+  'puzzle/fetchProgress',
+  async (puzzleId: number, { getState }) => {
+    const state = getState() as RootState
+    const token = state.auth.token
+    
+    if (!token) return null
+    
+    try {
+      const response = await axios.get(`/api/progress/${puzzleId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      return response.data
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null // No progress found, that's ok
+      }
+      throw error
+    }
+  }
+)
+
 export const saveProgress = createAsyncThunk(
   'puzzle/saveProgress',
   async ({ puzzleId, state }: { puzzleId: number; state: any }, { getState }) => {
     const rootState = getState() as RootState
     const token = rootState.auth.token
     
+    // Calculate total elapsed time including current running session
+    const { elapsedTime, isTimerRunning, startTime } = rootState.puzzle
+    const totalElapsedTime = isTimerRunning && startTime 
+      ? elapsedTime + (Date.now() - startTime)
+      : elapsedTime
+    
     const response = await axios.post(
-      '/api/progress',
+      '/api/progress/',
       {
         puzzle_id: puzzleId,
         current_state: state,
         completion_percentage: calculateCompletionPercentage(rootState.puzzle),
+        completion_time: Math.floor(totalElapsedTime / 1000),
       },
       { headers: { Authorization: `Bearer ${token}` } }
     )
     return response.data
+  }
+)
+
+export const deletePuzzle = createAsyncThunk(
+  'puzzle/deletePuzzle',
+  async (puzzleId: number, { getState }) => {
+    const state = getState() as RootState
+    const token = state.auth.token
+    
+    if (!token) {
+      throw new Error('Authentication required to delete puzzle')
+    }
+    
+    const response = await axios.delete(`/api/puzzles/${puzzleId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return { puzzleId, message: response.data.message }
   }
 )
 
@@ -114,10 +162,17 @@ const puzzleSlice = createSlice({
       state.selectedCell = action.payload
     },
     enterLetter: (state, action: PayloadAction<string>) => {
-      if (!state.selectedCell) return
+      if (!state.selectedCell || state.isCompleted) return
       
       const key = `${state.selectedCell.row},${state.selectedCell.col}`
       state.userGrid[key] = action.payload.toUpperCase()
+      
+      // Check if puzzle is now completely filled and correct
+      const isPuzzleComplete = checkPuzzleCompletion(state)
+      if (isPuzzleComplete) {
+        state.isCompleted = true
+        state.isTimerRunning = false
+      }
       
       // Check if current word is complete
       if (state.currentPuzzle) {
@@ -272,6 +327,15 @@ const puzzleSlice = createSlice({
         state.selectedCell = nextWordCell
       }
     },
+    moveToPreviousEmptyWord: (state) => {
+      if (!state.selectedCell || !state.currentPuzzle) return
+      
+      // Find previous word with empty cells
+      const prevWordCell = getPreviousWordWithEmptyCell(state)
+      if (prevWordCell) {
+        state.selectedCell = prevWordCell
+      }
+    },
     checkPuzzle: (state) => {
       if (!state.currentPuzzle) return
       
@@ -343,11 +407,6 @@ const puzzleSlice = createSlice({
         state.startTime = null
       }
     },
-    resetTimer: (state) => {
-      state.startTime = null
-      state.elapsedTime = 0
-      state.isTimerRunning = false
-    },
     updateTimer: (state) => {
       // Update timestamp to force re-render
       state.lastTimerUpdate = Date.now()
@@ -367,11 +426,12 @@ const puzzleSlice = createSlice({
         state.hasBeenChecked = false
         state.checkedCells = {}
         
-        // Reset timer for new puzzle
+        // Reset timer and completion status for new puzzle (will be overridden by fetchProgress if saved)
         state.startTime = null
         state.elapsedTime = 0
         state.isTimerRunning = false
         state.lastTimerUpdate = 0
+        state.isCompleted = false
         
         // Load user progress if available
         if (action.payload.user_progress?.current_state) {
@@ -379,10 +439,51 @@ const puzzleSlice = createSlice({
         } else {
           state.userGrid = {}
         }
+        
+        // Set default starting position to first blank square with across orientation
+        if (action.payload.cells && action.payload.cells.length > 0) {
+          const firstBlankCell = action.payload.cells.find(cell => 
+            !cell.is_black_square && cell.number
+          )
+          if (firstBlankCell) {
+            state.selectedCell = { row: firstBlankCell.row, col: firstBlankCell.col }
+            state.direction = 'ACROSS'
+          }
+        }
+      })
+      .addCase(fetchProgress.fulfilled, (state, action) => {
+        if (action.payload) {
+          // Load saved grid state
+          if (action.payload.current_state) {
+            try {
+              state.userGrid = JSON.parse(action.payload.current_state)
+            } catch (e) {
+              console.error('Failed to parse saved grid state:', e)
+            }
+          }
+          
+          // Load saved timer value (convert seconds to milliseconds)
+          if (action.payload.completion_time) {
+            state.elapsedTime = action.payload.completion_time * 1000
+          }
+          
+          // If the puzzle is completed, lock it
+          if (action.payload.is_completed) {
+            state.isCompleted = true
+            state.isTimerRunning = false
+          }
+        }
       })
       .addCase(fetchPuzzle.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.error.message || 'Failed to load puzzle'
+      })
+      .addCase(deletePuzzle.fulfilled, (state, action) => {
+        // Remove the deleted puzzle from the puzzles list
+        state.puzzles = state.puzzles.filter(puzzle => puzzle.id !== action.payload.puzzleId)
+      })
+      .addCase(deletePuzzle.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to delete puzzle'
       })
   },
 })
@@ -498,6 +599,65 @@ function getNextWordWithEmptyCell(state: PuzzleState): { row: number; col: numbe
   for (let i = 0; i < currentIndex; i++) {
     const nextClue = currentClues[i]
     const startCell = state.currentPuzzle.cells.find(c => c.number === nextClue.number)
+    if (!startCell) continue
+    
+    const wordCells = getCurrentWordCells(startCell, state.direction, state.currentPuzzle)
+    const firstEmptyCell = wordCells.find(cell => {
+      const key = `${cell.row},${cell.col}`
+      return !state.userGrid[key]
+    })
+    
+    if (firstEmptyCell) {
+      return { row: firstEmptyCell.row, col: firstEmptyCell.col }
+    }
+  }
+  
+  return null
+}
+
+function getPreviousWordWithEmptyCell(state: PuzzleState): { row: number; col: number } | null {
+  if (!state.selectedCell || !state.currentPuzzle) return null
+  
+  // Get current word to find where we are
+  const currentWordCells = getCurrentWordCells(state.selectedCell, state.direction, state.currentPuzzle)
+  const currentClue = state.currentPuzzle.clues.find(clue => {
+    const clueStartCell = state.currentPuzzle!.cells.find(c => c.number === clue.number)
+    return clueStartCell && currentWordCells.some(cell => 
+      cell.row === clueStartCell.row && cell.col === clueStartCell.col
+    ) && clue.direction === state.direction
+  })
+  
+  if (!currentClue) return null
+  
+  // Get all clues of same direction, sorted by number
+  const currentClues = state.currentPuzzle.clues
+    .filter(c => c.direction === state.direction)
+    .sort((a, b) => a.number - b.number)
+  
+  // Find current clue index
+  const currentIndex = currentClues.findIndex(c => c.number === currentClue.number)
+  
+  // Look for previous word with empty cells, starting from the previous clue
+  for (let i = currentIndex - 1; i >= 0; i--) {
+    const prevClue = currentClues[i]
+    const startCell = state.currentPuzzle.cells.find(c => c.number === prevClue.number)
+    if (!startCell) continue
+    
+    const wordCells = getCurrentWordCells(startCell, state.direction, state.currentPuzzle)
+    const firstEmptyCell = wordCells.find(cell => {
+      const key = `${cell.row},${cell.col}`
+      return !state.userGrid[key]
+    })
+    
+    if (firstEmptyCell) {
+      return { row: firstEmptyCell.row, col: firstEmptyCell.col }
+    }
+  }
+  
+  // If no word found before current, wrap around and check from end
+  for (let i = currentClues.length - 1; i > currentIndex; i--) {
+    const prevClue = currentClues[i]
+    const startCell = state.currentPuzzle.cells.find(c => c.number === prevClue.number)
     if (!startCell) continue
     
     const wordCells = getCurrentWordCells(startCell, state.direction, state.currentPuzzle)
@@ -636,6 +796,15 @@ export function getPuzzleProgress(puzzle: Puzzle, userGrid: { [key: string]: str
   }
 }
 
+function checkPuzzleCompletion(state: PuzzleState): boolean {
+  if (!state.currentPuzzle) return false
+  
+  const progress = getPuzzleProgress(state.currentPuzzle, state.userGrid)
+  
+  // Puzzle is complete when all cells are filled correctly
+  return progress.filled === progress.total && progress.incorrect === 0
+}
+
 export const {
   selectCell,
   enterLetter,
@@ -647,6 +816,7 @@ export const {
   moveToNextWord,
   moveToNextEmptyCell,
   moveToNextEmptyWord,
+  moveToPreviousEmptyWord,
   checkPuzzle,
   revealLetter,
   revealWord,
@@ -654,7 +824,6 @@ export const {
   clearPuzzle,
   startTimer,
   stopTimer,
-  resetTimer,
   updateTimer,
 } = puzzleSlice.actions
 

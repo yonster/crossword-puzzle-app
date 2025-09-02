@@ -11,6 +11,7 @@ import {
   moveToNextWord,
   moveToNextEmptyCell,
   moveToNextEmptyWord,
+  moveToPreviousEmptyWord,
 } from '../store/puzzleSlice'
 import { Puzzle, Cell } from '../store/puzzleSlice'
 import clsx from 'clsx'
@@ -60,14 +61,14 @@ function getCurrentWordCells(selectedCell: {row: number, col: number}, direction
 
 export default function CrosswordGrid() {
   const dispatch = useDispatch<AppDispatch>()
-  const { currentPuzzle, userGrid, selectedCell, direction, checkedCells } = useSelector(
+  const { currentPuzzle, userGrid, selectedCell, direction, checkedCells, isCompleted } = useSelector(
     (state: RootState) => state.puzzle
   )
   const gridRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedCell) return
+      if (!selectedCell || isCompleted) return
 
       // Letter input
       if (e.key.length === 1 && e.key.match(/[a-zA-Z]/)) {
@@ -105,7 +106,7 @@ export default function CrosswordGrid() {
         case 'Tab':
           e.preventDefault()
           if (e.shiftKey) {
-            // TODO: Move to previous word
+            dispatch(moveToPreviousEmptyWord())
           } else {
             dispatch(moveToNextEmptyWord())
           }
@@ -163,24 +164,27 @@ export default function CrosswordGrid() {
           <div
             key={key}
             onClick={() => {
-              if (!cell.is_black_square) {
+              if (!cell.is_black_square && !isCompleted) {
                 dispatch(selectCell({ row: cell.row, col: cell.col }))
               }
             }}
             onDoubleClick={() => {
-              if (!cell.is_black_square) {
+              if (!cell.is_black_square && !isCompleted) {
                 dispatch(toggleDirection())
               }
             }}
             className={clsx(
-              'border border-gray-300 relative cursor-pointer flex items-center justify-center',
+              'border border-gray-300 relative flex items-center justify-center',
               {
                 'bg-black': cell.is_black_square,
-                'bg-blue-500 text-white': isSelected,
-                'bg-blue-100': isInSelectedWord && !isSelected,
+                'bg-blue-500 text-white': isSelected && !isCompleted,
+                'bg-blue-100': isInSelectedWord && !isSelected && !isCompleted,
                 'bg-green-200 border-green-400': checkState === 'correct',
                 'bg-red-200 border-red-400': checkState === 'incorrect',
-                'hover:bg-gray-100': !cell.is_black_square && !isSelected && !isInSelectedWord && !checkState,
+                'bg-green-100 border-green-300': isCompleted && !cell.is_black_square,
+                'cursor-pointer': !isCompleted,
+                'cursor-default': isCompleted,
+                'hover:bg-gray-100': !cell.is_black_square && !isSelected && !isInSelectedWord && !checkState && !isCompleted,
               }
             )}
             style={{

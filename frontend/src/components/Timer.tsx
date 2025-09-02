@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState, AppDispatch } from '../store/store'
-import { startTimer, stopTimer, resetTimer, updateTimer } from '../store/puzzleSlice'
+import { startTimer, stopTimer, updateTimer } from '../store/puzzleSlice'
 
 export default function Timer() {
   const dispatch = useDispatch<AppDispatch>()
@@ -9,12 +9,7 @@ export default function Timer() {
     (state: RootState) => state.puzzle
   )
 
-  // Auto-start timer when component mounts
-  useEffect(() => {
-    if (!isTimerRunning && elapsedTime === 0) {
-      dispatch(startTimer())
-    }
-  }, [dispatch, isTimerRunning, elapsedTime])
+  // Timer will be started manually by the StartPuzzleOverlay
 
   // Update timer every second when running
   useEffect(() => {
@@ -51,9 +46,6 @@ export default function Timer() {
     }
   }
 
-  const handleResetTimer = () => {
-    dispatch(resetTimer())
-  }
 
   return (
     <div className="bg-white p-3 rounded-lg shadow mb-4">
@@ -77,13 +69,6 @@ export default function Timer() {
             }`}
           >
             {isTimerRunning ? 'Pause' : 'Start'}
-          </button>
-          
-          <button
-            onClick={handleResetTimer}
-            className="px-3 py-1 bg-gray-500 text-white rounded text-sm font-medium hover:bg-gray-600"
-          >
-            Reset
           </button>
         </div>
       </div>

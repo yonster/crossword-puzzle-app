@@ -78,6 +78,7 @@ const authSlice = createSlice({
         state.isLoading = false
         state.token = action.payload.access_token
         localStorage.setItem('token', action.payload.access_token)
+        // Note: user data will be fetched by fetchCurrentUser after login
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false

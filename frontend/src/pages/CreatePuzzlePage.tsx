@@ -98,7 +98,7 @@ export default function CreatePuzzlePage() {
                     onChange={(e) => setUploadType(e.target.value as 'puz')}
                     className="mr-2"
                   />
-                  .puz File
+                  .puz File (Across Lite format)
                 </label>
                 <label className="flex items-center">
                   <input
@@ -146,8 +146,8 @@ export default function CreatePuzzlePage() {
           <div className="mt-6 text-sm text-gray-600">
             <p className="font-medium mb-2">Supported formats:</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>.puz files - Standard crossword puzzle format</li>
-              <li>NYT JSON - New York Times submission format</li>
+              <li><strong>.puz files</strong> - Across Lite format (most common crossword format)</li>
+              <li><strong>NYT JSON</strong> - New York Times submission format</li>
             </ul>
             <p className="mt-2">Grid sizes supported: 5x5 to 25x25</p>
           </div>
