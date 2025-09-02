@@ -105,8 +105,7 @@ The application will be available at http://localhost:3000
 - **Tab/Enter**: Move to next incomplete word (smart navigation)
 - **Shift+Tab**: Move to previous word
 - **Space**: Switch between Across and Down directions
-- **Backspace**: Clear current cell and move back
-- **Delete**: Clear current cell
+- **Backspace/Delete**: Clear current cell and move back (cross-word navigation)
 - **Escape**: Deselect current cell
 - **Double-click**: Toggle orientation (alternative to spacebar)
 

@@ -94,12 +94,9 @@ export default function CrosswordGrid() {
           dispatch(moveCursor('right'))
           break
         case 'Backspace':
-          e.preventDefault()
-          dispatch(deleteLetterAndMove())
-          break
         case 'Delete':
           e.preventDefault()
-          dispatch(deleteLetter())
+          dispatch(deleteLetterAndMove())
           break
         case ' ':
           e.preventDefault()
