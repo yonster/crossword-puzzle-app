@@ -138,6 +138,7 @@ export default function CrosswordGrid() {
   return (
     <div
       ref={gridRef}
+      data-puzzle-grid
       className="inline-block border-2 border-black"
       style={{
         display: 'grid',

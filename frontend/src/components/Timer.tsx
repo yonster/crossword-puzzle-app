@@ -9,21 +9,12 @@ export default function Timer() {
     (state: RootState) => state.puzzle
   )
 
-  // Start timer on first user interaction
+  // Auto-start timer when component mounts
   useEffect(() => {
-    const handleFirstInteraction = () => {
+    if (!isTimerRunning && elapsedTime === 0) {
       dispatch(startTimer())
     }
-
-    // Listen for any user interaction that indicates they started solving
-    document.addEventListener('click', handleFirstInteraction, { once: true })
-    document.addEventListener('keydown', handleFirstInteraction, { once: true })
-
-    return () => {
-      document.removeEventListener('click', handleFirstInteraction)
-      document.removeEventListener('keydown', handleFirstInteraction)
-    }
-  }, [dispatch])
+  }, [dispatch, isTimerRunning, elapsedTime])
 
   // Update timer every second when running
   useEffect(() => {
