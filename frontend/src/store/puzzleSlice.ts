@@ -37,6 +37,7 @@ interface PuzzleState {
   startTime: number | null
   elapsedTime: number
   isTimerRunning: boolean
+  lastTimerUpdate: number
   isLoading: boolean
   error: string | null
 }
@@ -52,6 +53,7 @@ const initialState: PuzzleState = {
   startTime: null,
   elapsedTime: 0,
   isTimerRunning: false,
+  lastTimerUpdate: 0,
   isLoading: false,
   error: null,
 }
@@ -347,8 +349,8 @@ const puzzleSlice = createSlice({
       state.isTimerRunning = false
     },
     updateTimer: (state) => {
-      // This action is called every second to trigger a re-render
-      // The actual elapsed time calculation is done in the component
+      // Update timestamp to force re-render
+      state.lastTimerUpdate = Date.now()
     },
   },
   extraReducers: (builder) => {
@@ -369,6 +371,7 @@ const puzzleSlice = createSlice({
         state.startTime = null
         state.elapsedTime = 0
         state.isTimerRunning = false
+        state.lastTimerUpdate = 0
         
         // Load user progress if available
         if (action.payload.user_progress?.current_state) {
