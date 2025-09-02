@@ -2,82 +2,91 @@
 
 This guide will help you deploy the Crossword app to Railway.app for personal use.
 
-## Prerequisites
+## Quick Fix for Current Deployment Issues
+
+Your current Railway deployment is failing because it needs a PostgreSQL database and proper environment variables. Here's how to fix it:
+
+### Step 1: Add PostgreSQL Database
+
+1. Go to your Railway project at [railway.app](https://railway.app)
+2. Click "New" → "Database" → "Add PostgreSQL"
+3. Wait for it to provision (about 30 seconds)
+
+### Step 2: Set Environment Variables
+
+In your Railway project, go to the service settings and add these variables:
+
+- `DATABASE_URL`: `${{Postgres.DATABASE_URL}}` (Railway will auto-populate this)
+- `SECRET_KEY`: Generate a random 32-character string
+- `ALGORITHM`: `HS256`
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: `10080`
+
+### Step 3: Redeploy
+
+Once you add the database and environment variables, Railway should automatically redeploy your app and it should work!
+
+## Full Setup Guide
+
+If you want to deploy from scratch:
+
+### Prerequisites
 
 1. Sign up for a free Railway account at [railway.app](https://railway.app)
-2. Install the Railway CLI:
-   ```bash
-   npm install -g @railway/cli
-   ```
-3. Login to Railway:
-   ```bash
-   railway login
-   ```
+2. Connect your GitHub account to Railway
 
-## Deployment Steps
+### Deployment Steps
 
-### 1. Deploy from GitHub (Recommended)
+1. **Create New Project**:
+   - Go to [railway.app](https://railway.app) 
+   - Click "New Project"
+   - Select "Deploy from GitHub repo"
+   - Choose your `crossword-puzzle-app` repository
 
-1. Push your code to a GitHub repository
-2. Go to [railway.app](https://railway.app) and create a new project
-3. Connect your GitHub repository
-4. Railway will automatically detect the `railway.json` configuration
+2. **Add PostgreSQL Database**:
+   - In your project, click "New" → "Database" → "Add PostgreSQL"
+   - Wait for provisioning to complete
 
-### 2. Deploy from CLI (Alternative)
+3. **Configure Environment Variables**:
+   - Click on your main service
+   - Go to "Variables" tab
+   - Add the variables listed in Step 2 above
 
-1. In your project root directory, run:
-   ```bash
-   railway link
-   ```
-   
-2. Deploy the project:
-   ```bash
-   railway up
-   ```
+4. **Deploy**:
+   - Railway will automatically deploy when you push to GitHub
+   - Your backend API will be available at the Railway-provided URL
 
-## Environment Variables
+## Current Configuration
 
-Railway will automatically set up the following environment variables based on your `railway.json`:
+The app is currently configured to deploy as a single backend service:
 
-- `DATABASE_URL`: Postgres database connection string
-- `SECRET_KEY`: Automatically generated secret key
-- `ALGORITHM`: JWT algorithm (HS256)
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration (10080 minutes = 7 days)
-- `VITE_API_URL`: Frontend API URL pointing to backend service
+- **Backend Service**: FastAPI app with PostgreSQL database
+  - Runs on: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+  - Located in `/backend` directory
 
-## Services Configuration
+- **Frontend**: Can be deployed separately or run locally
+  - For local development: `npm run dev` in `/frontend`
+  - Points to Railway backend URL via `VITE_API_URL`
 
-The app consists of:
+## Testing Your Deployment
 
-1. **Backend Service**: FastAPI app with PostgreSQL database
-   - Runs on: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   - Health check: `/`
-   
-2. **Frontend Service**: Vite React app
-   - Build: `npm install && npm run build`
-   - Start: `npm run preview -- --host 0.0.0.0 --port $PORT`
-   
-3. **PostgreSQL Database**: Automatically provisioned
-
-## Post-Deployment
-
-1. Your app will be available at the URLs provided by Railway
-2. Create a user account through the frontend
-3. Start importing and solving puzzles!
+1. Once deployed, your API will be available at `https://your-app-name.railway.app`
+2. Test the health check: `curl https://your-app-name.railway.app/`
+3. Create a user via the API or run the frontend locally pointing to your Railway backend
 
 ## Local Development
 
-For local development, the app still uses:
-- Backend: http://localhost:8000
-- Frontend: http://localhost:3000 (with API proxy to backend)
+For local development:
+- Backend: `cd backend && uvicorn app.main:app --reload`
+- Frontend: `cd frontend && npm run dev`
+- Uses SQLite database locally, PostgreSQL in production
 
 ## Troubleshooting
 
-- Check Railway logs in the dashboard
-- Ensure all environment variables are set correctly
-- Verify database connectivity
-- Check that both services are running
+- **Build fails**: Check that `requirements.txt` exists in `/backend` directory
+- **Runtime fails**: Ensure DATABASE_URL and SECRET_KEY are set
+- **API errors**: Check Railway logs in the dashboard
+- **Database connection**: Verify PostgreSQL database is running
 
 ## Costs
 
-Railway offers a generous free tier that should be sufficient for personal use. Monitor your usage in the Railway dashboard.
+Railway offers a generous free tier ($5/month of usage) that should be sufficient for personal use.
