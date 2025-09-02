@@ -5,6 +5,7 @@ import {
   selectCell,
   enterLetter,
   deleteLetter,
+  deleteLetterAndMove,
   moveCursor,
   toggleDirection,
   moveToNextWord,
@@ -94,13 +95,7 @@ export default function CrosswordGrid() {
           break
         case 'Backspace':
           e.preventDefault()
-          dispatch(deleteLetter())
-          // Move to previous cell
-          if (direction === 'ACROSS') {
-            dispatch(moveCursor('left'))
-          } else {
-            dispatch(moveCursor('up'))
-          }
+          dispatch(deleteLetterAndMove())
           break
         case 'Delete':
           e.preventDefault()

@@ -157,6 +157,24 @@ const puzzleSlice = createSlice({
       const key = `${state.selectedCell.row},${state.selectedCell.col}`
       state.userGrid[key] = ''
     },
+    deleteLetterAndMove: (state) => {
+      if (!state.selectedCell || !state.currentPuzzle) return
+      
+      const key = `${state.selectedCell.row},${state.selectedCell.col}`
+      const currentEntry = state.userGrid[key]
+      
+      // Clear current cell
+      state.userGrid[key] = ''
+      
+      // Only move if the cell was already empty
+      if (!currentEntry) {
+        // Find previous cell in current direction
+        const prevCell = getPreviousCell(state)
+        if (prevCell) {
+          state.selectedCell = prevCell
+        }
+      }
+    },
     moveCursor: (state, action: PayloadAction<'up' | 'down' | 'left' | 'right'>) => {
       if (!state.selectedCell || !state.currentPuzzle) return
       
@@ -329,9 +347,8 @@ const puzzleSlice = createSlice({
       state.isTimerRunning = false
     },
     updateTimer: (state) => {
-      if (state.isTimerRunning && state.startTime) {
-        state.elapsedTime = Date.now() - state.startTime
-      }
+      // This action is called every second to trigger a re-render
+      // The actual elapsed time calculation is done in the component
     },
   },
   extraReducers: (builder) => {
@@ -521,6 +538,63 @@ function getNextCell(state: PuzzleState): { row: number; col: number } | null {
   return null
 }
 
+function getPreviousCell(state: PuzzleState): { row: number; col: number } | null {
+  if (!state.selectedCell || !state.currentPuzzle) return null
+  
+  const { row, col } = state.selectedCell
+  
+  // First try to find previous cell in current word
+  const currentWordCells = getCurrentWordCells(state.selectedCell, state.direction, state.currentPuzzle)
+  const currentIndex = currentWordCells.findIndex(cell => 
+    cell.row === row && cell.col === col
+  )
+  
+  if (currentIndex > 0) {
+    const prevCell = currentWordCells[currentIndex - 1]
+    return { row: prevCell.row, col: prevCell.col }
+  }
+  
+  // If at start of word, find previous word with letters
+  const allClues = state.currentPuzzle.clues
+    .filter(c => c.direction === state.direction)
+    .sort((a, b) => b.number - a.number) // Reverse order
+  
+  const currentClue = allClues.find(clue => {
+    const clueStartCell = state.currentPuzzle!.cells.find(c => c.number === clue.number)
+    return clueStartCell && currentWordCells.some(cell => 
+      cell.row === clueStartCell.row && cell.col === clueStartCell.col
+    )
+  })
+  
+  if (!currentClue) return null
+  
+  const currentClueIndex = allClues.findIndex(c => c.number === currentClue.number)
+  
+  // Look for previous word with letters, starting from the previous clue
+  for (let i = currentClueIndex + 1; i < allClues.length; i++) {
+    const prevClue = allClues[i]
+    const startCell = state.currentPuzzle.cells.find(c => c.number === prevClue.number)
+    if (!startCell) continue
+    
+    const wordCells = getCurrentWordCells(startCell, state.direction, state.currentPuzzle)
+    // Find the last filled cell in this word
+    for (let j = wordCells.length - 1; j >= 0; j--) {
+      const cell = wordCells[j]
+      const key = `${cell.row},${cell.col}`
+      if (state.userGrid[key]) {
+        return { row: cell.row, col: cell.col }
+      }
+    }
+    // If no filled cells, go to last cell of word
+    const lastCell = wordCells[wordCells.length - 1]
+    if (lastCell) {
+      return { row: lastCell.row, col: lastCell.col }
+    }
+  }
+  
+  return null
+}
+
 // Utility function to get puzzle progress
 export function getPuzzleProgress(puzzle: Puzzle, userGrid: { [key: string]: string }): {
   percentage: number
@@ -563,6 +637,7 @@ export const {
   selectCell,
   enterLetter,
   deleteLetter,
+  deleteLetterAndMove,
   moveCursor,
   toggleDirection,
   loadProgress,
