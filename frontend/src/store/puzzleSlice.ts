@@ -25,6 +25,7 @@ export interface Puzzle {
   grid_size: number
   cells: Cell[]
   clues: Clue[]
+  author_id?: number
 }
 
 interface PuzzleState {
@@ -443,7 +444,7 @@ const puzzleSlice = createSlice({
         
         // Set default starting position to first blank square with across orientation
         if (action.payload.cells && action.payload.cells.length > 0) {
-          const firstBlankCell = action.payload.cells.find(cell => 
+          const firstBlankCell = action.payload.cells.find((cell: Cell) => 
             !cell.is_black_square && cell.number
           )
           if (firstBlankCell) {

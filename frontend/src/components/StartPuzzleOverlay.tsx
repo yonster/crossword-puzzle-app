@@ -31,12 +31,7 @@ export default function StartPuzzleOverlay() {
           
           <div className="text-gray-600 mb-6 space-y-2">
             <p>Grid Size: {currentPuzzle.grid_size}×{currentPuzzle.grid_size}</p>
-            {currentPuzzle.difficulty && (
-              <p>Difficulty: {currentPuzzle.difficulty}</p>
-            )}
-            {currentPuzzle.description && (
-              <p className="text-sm italic">{currentPuzzle.description}</p>
-            )}
+            <p>Clues: {currentPuzzle.clues?.length || 0}</p>
           </div>
           
           <div className="text-sm text-gray-500 mb-6">

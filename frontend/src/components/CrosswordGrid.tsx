@@ -4,12 +4,9 @@ import { RootState, AppDispatch } from '../store/store'
 import {
   selectCell,
   enterLetter,
-  deleteLetter,
   deleteLetterAndMove,
   moveCursor,
   toggleDirection,
-  moveToNextWord,
-  moveToNextEmptyCell,
   moveToNextEmptyWord,
   moveToPreviousEmptyWord,
 } from '../store/puzzleSlice'
